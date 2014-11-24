@@ -1,0 +1,176 @@
+{% import '../macros/formbuilder.twig' as forms %}
+
+{#
+    Let's create registration form with user name, email and sex, but with many options
+#}
+
+{{
+    forms.create({
+        'name' : 'registration',
+        'action' : '/any/url',
+        'method' : 'post',
+        'className' : 'user-registration',
+        'attributes' : {
+            'enctype' : 'multipart/form-data',
+            'novalidate' : null
+        },
+        'rows' : [
+            {
+                'wrapper' : {
+                    'single' : 1,
+                    'name' : 'user-name',
+                    'classNames' : 'special-user-name-classname',
+                    'attributes' : {
+                        'id' : 'user-name-wrapper',
+                        'style' : '/* any_css_here */',
+                    },
+                    'before' : '<!-- Any html content that will be output after wrapper open div. --!>',
+                    'after' : '<!--Any html content that will be output before wrapper close div. --!>',
+                    'visible' : isUserNameHidden is not defined,
+                    'norender' : isUserNameNoRender is defined
+                },
+                'label' : { 'text' : 'Enter your name: ' },
+                'name' : 'user-name',
+                'classNames' : 'one-more-special-user-name-classname',
+                'attributes' : {
+                    'data-example-string' : 'hello world',
+                    'style' : '/* any_css_here */',
+                    'hidden' : (isUserNameHidden is defined ? null : 0)
+                },
+                'before' : '<!-- Any html content that will be output after row open div. --!>',
+                'after' : '<!-- Any html content that will be output before row close div. --!>',
+                'visible' : isUserNameHidden is not defined,
+                'norender' : isUserNameNoRender is defined,
+                'controls' : {
+                    'type' : 'text',
+                    'classNames' : 'row-controls-classname row-controls-classname-one-more',
+                    'attributes' : {
+                        'value' : '',
+                        'placeholder' : 'Input your name',
+                        'name' : 'user_name',
+                        'id' : 'user-name'
+                    }
+                },
+                'state' : isRowInvalid is defined ? 'valid' : 'invalid',
+                'messages' : {
+                    'error' : { visible : isErrorHidden is not defined, text : '<!-- Any html, visible then state is invalid or then visible options is true --!>' },
+                    'helper' : { visible : isHelperHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                    'info' : { visible : isInfoHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                    'warning' : { visible : isWarningHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                }
+            },
+            {
+                'label' : { 'text' : 'Enter your email: ' },
+                'name' : 'user-email',
+                'classNames' : 'one-more-special-user-email-classname',
+                'attributes' : {
+                    'data-example-string' : 'hello world',
+                    'style' : '/* any_css_here */',
+                    'hidden' : (isUserEmailHidden is defined ? null : 0)
+                },
+                'before' : '<!-- Any html content that will be output after row open div. --!>',
+                'after' : '<!-- Any html content that will be output before row close div. --!>',
+                'visible' : isUserEmailHidden is not defined,
+                'norender' : isUserEmailNoRender is defined,
+                'controls' : {
+                    'type' : 'email',
+                    'classNames' : 'row-controls-classname row-controls-classname-one-more',
+                    'attributes' : {
+                        'value' : '',
+                        'placeholder' : 'Input your email',
+                        'name' : 'user_email',
+                        'id' : 'user-email'
+                    }
+                },
+                'state' : isRowInvalid is defined ? 'valid' : 'invalid',
+                'messages' : {
+                    'error' : { visible : isErrorHidden is not defined, text : '<!-- Any html, visible then state is invalid or then visible options is true --!>' },
+                    'helper' : { visible : isHelperHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                    'info' : { visible : isInfoHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                    'warning' : { visible : isWarningHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                }
+            },
+            {
+                'wrapper' : {
+                    'multiple' : 1,
+                    'startMultiple' : 1,
+                    'name' : 'user-sex',
+                    'classNames' : 'special-user-sex-classname',
+                    'attributes' : {
+                        'id' : 'user-sex-wrapper',
+                        'style' : '/* any_css_here */',
+                    },
+                    'before' : '<!-- Any html content that will be output after wrapper open div. --!>',
+                    'visible' : isUserSexHidden is not defined,
+                    'norender' : isUserSexNoRender is defined
+                },
+                'label' : { 'text' : 'Male' },
+                'name' : 'user-sex',
+                'classNames' : 'one-more-special-user-sex-classname',
+                'attributes' : {
+                    'data-example-string' : 'hello world',
+                    'style' : '/* any_css_here */',
+                    'hidden' : (isUserSexHidden is defined ? null : 0)
+                },
+                'before' : '<!-- Any html content that will be output after row open div. --!>',
+                'after' : '<!-- Any html content that will be output before row close div. --!>',
+                'visible' : isUserSexHidden is not defined,
+                'norender' : isUserSexNoRender is defined,
+                'controls' : {
+                    'type' : 'radio',
+                    'classNames' : 'row-controls-classname row-controls-classname-one-more',
+                    'attributes' : {
+                        'value' : '',
+                        'placeholder' : 'Input your email',
+                        'name' : 'user_sex',
+                        'id' : 'user-sex'
+                    }
+                },
+                'state' : isRowInvalid is defined ? 'valid' : 'invalid',
+                'messages' : {
+                    'error' : { visible : isErrorHidden is not defined, text : '<!-- Any html, visible then state is invalid or then visible options is true --!>' },
+                    'helper' : { visible : isHelperHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                    'info' : { visible : isInfoHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                    'warning' : { visible : isWarningHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                }
+            },
+            {
+                'wrapper' : {
+                    'multiple' : 1,
+                    'endMultiple' : 1,
+                    'name' : 'user-sex',
+                    'after' : '<!-- Any html content that will be output before wrapper close div. --!>',
+                },
+                'label' : { 'text' : 'Female' },
+                'name' : 'user-sex',
+                'classNames' : 'one-more-special-user-sex-classname',
+                'attributes' : {
+                    'data-example-string' : 'hello world',
+                    'style' : '/* any_css_here */',
+                    'hidden' : (isUserSexHidden is defined ? null : 0)
+                },
+                'before' : '<!-- Any html content that will be output after row open div. --!>',
+                'after' : '<!-- Any html content that will be output before row close div. --!>',
+                'visible' : isUserSexHidden is not defined,
+                'norender' : isUserSexNoRender is defined,
+                'controls' : {
+                    'type' : 'radio',
+                    'classNames' : 'row-controls-classname row-controls-classname-one-more',
+                    'attributes' : {
+                        'value' : '',
+                        'placeholder' : 'Input your email',
+                        'name' : 'user_sex',
+                        'id' : 'user-sex'
+                    }
+                },
+                'state' : isRowInvalid is defined ? 'valid' : 'invalid',
+                'messages' : {
+                    'error' : { visible : isErrorHidden is not defined, text : '<!-- Any html, visible then state is invalid or then visible options is true --!>' },
+                    'helper' : { visible : isHelperHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                    'info' : { visible : isInfoHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                    'warning' : { visible : isWarningHidden is not defined, text : '<!-- Any html, visible then state is valid or then visible options is true --!>' },
+                }
+            }
+        ]
+    })
+}}

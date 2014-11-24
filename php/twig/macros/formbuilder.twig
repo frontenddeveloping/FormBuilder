@@ -1,0 +1,784 @@
+{# TODO check wrapper, must be for any essence #}
+{# TODO check and add more BOOLEAN_PROPS #}
+{# TODO more HTML5 elements to createControl method #}
+
+{##################################
+             PRIVATE
+##################################}
+
+{# HTML attributes or properties which can be with out value #}
+{% set BOOLEAN_PROPS = ['checked', 'selected', 'disabled', 'readonly', 'capture', 'multiple', 'autofocus', 'novalidate'] %}
+
+{% macro _getEssenceParent(options) %}{% spaceless %}
+    {#
+        Return parent name of essence
+        NB: control and message have row as parent, because essence has a className with it parent essence
+            and "controls-control" or "messages-message" is not a good className
+    #}
+    {% if essence == 'row' %}
+        {% set parent = 'form' %}
+    {% elseif essence in ['control', 'controls', 'label', 'messages', 'message'] %}
+        {% set parent = 'row' %}
+    {% elseif essence in ['optgroup', 'option'] %}
+        {% set parent = 'select' %}
+    {% else %}
+        {% set parent = '' %}
+    {% endif %}
+    {{ parent }}
+{% endspaceless %}{% endmacro %}
+
+{% macro _getClassNamesString(options, essence, isWrapper) %}{% spaceless %}
+    {# This fabric creates the class attribute string value from essence options #}
+    {% set options = options|default({}) %}
+    {% set essenceParent = _getEssenceParent(essence) %}
+    {% set wrapperPostfix = isWrapper ? '-wrapper' : '' %}
+    {% set classNames %}
+        {% if isWrapper %}
+            {{ essence }}-wrapper
+        {% elseif essenceParent %}
+            {{ essenceParent }}-{{ essence }}
+        {% else %}
+            {{ essence }}
+        {% endif %}
+        {% if options.pseudo %}
+            {{ essence }}-pseudo
+        {% endif %}
+        {% if options.name %}
+            {{ essence }}-{{ options.name }}{{ wrapperPostfix }}
+        {% endif %}
+        {% if options.type %}
+            {{ essence }}-{{ options.type }}{{ wrapperPostfix }}
+        {% endif %}
+        {% if options.state %}
+            {{ essence }}-{{ options.state }}{{ wrapperPostfix }}
+        {% endif %}
+        {% if options.invalidState %}
+            {{ essence }}-invalid{{ wrapperPostfix }}
+        {% endif %}
+        {% if options.validState %}
+            {{ essence }}-valid{{ wrapperPostfix }}
+        {% endif %}
+        {{ options.classNames }}
+    {% endset %}
+    {{ classNames }}
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderBeforeContent(before) %}{% spaceless %}
+    {#
+        Just render inside essence and after open tag (like css pseudo before element)
+        Can be string type only
+    #}
+
+    {% set before = before|default({}) %}
+
+    {% if not before.norender %}
+        {{ before }}
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderAfterContent(after) %}{% spaceless %}
+    {#
+        Just render inside essence and before closing tag (like css pseudo after element)
+        Can be string type only
+    #}
+
+    {% set after = after|default({}) %}
+
+    {% if not after.norender %}
+        {{ after }}
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderAttributes(attributes) %}{% spaceless %}
+    {# This fabric creates a essence HTML container attributes string #}
+
+    {% set rowAttributes = '' %}
+    {% set attributes = attributes|default({}) %}
+    {% set attrIsBoolean = attrName in BOOLEAN_PROPS %}
+
+    {% for attrName, attrValue in attributes %}
+        {% set rowAttributes %}{% spaceless %}
+            {{ rowAttributes }}
+            {% if attrValue is not empty or (attrValue == '0' and attrValue != null) %}
+                {{ attrName }}="{{ attrValue }}"
+            {% elseif attrValue == null and not attrIsBoolean %}
+                {{ attrName }}
+            {% endif %}
+        {% endspaceless %}{% endset %}
+    {% endfor %}
+
+    {{ rowAttributes }}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderWrapperBegin(wrapper, essence) %}{% spaceless %}
+    {# Render open tag for essence container wrapper and render wrapper before content #}
+
+    {% import _self as forms %}
+
+    {% set wrapper = wrapper|default({}) %}
+
+    {% if not wrapper.norender %}
+
+        {% set idAttribute = wrapper.id ? ' id="' ~ wrapper.id ~ '" ' : '' %}
+        {% set attributes = forms._tryRenderAttributes(wrapper.attributes) ~ idAttribute %}
+        {% set classNames = forms._getClassNamesString(wrapper, essence, true) %}
+        {% set hide = options.hidden ? 'style="display: none"' : '' %}
+
+        <div class="{{ classNames }}" {{ attributes }} {{ hide }}>
+
+        {{ forms._tryRenderBeforeContent(wrapper.before) }}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderWrapperEnd(wrapper, essence) %}{% spaceless %}
+    {# Render close tag for essence container wrapper and render wrapper after content #}
+
+    {% import _self as forms %}
+
+    {% set wrapper = wrapper|default({}) %}
+
+    {% if not wrapper.norender %}
+        {{ forms._tryRenderAfterContent(wrapper.after) }}
+        </div>
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderContainerBegin(options, essence) %}{% spaceless %}
+    {# Render open tag for essence container and render before content #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% set idAttribute = options.id ? ' id="' ~ options.id ~ '" ' : '' %}
+        {% set attributes = forms._tryRenderAttributes(options.attributes) ~ idAttribute %}
+        {% set classNames = forms._getClassNamesString %}
+        {% set hidden = options.hidden ? ' style="display: none"' : '' %}
+
+        {% set tagName = essence == 'form' ? 'form' : 'div' %}
+
+        <{{ tagName }} class="{{ classNames }}" {{ attributes }} {{ hidden }}>
+
+        {{ forms._tryRenderBeforeContent(options.before) }}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderContainerEnd(options, essence) %}{% spaceless %}
+    {# Render close tag for essence container and render after content #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+        {{ forms._tryRenderAfterContent(options.after) }}
+        </div>
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderTextarea(options) %}{% spaceless %}
+    {# Render textarea only #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% if options is iterable %}
+            {# object #}
+
+            {% set idAttribute = options.id ? ' id="' ~ options.id ~ '" ' : '' %}
+            {% set attributes = forms._tryRenderAttributes(options.attributes) ~ idAttribute %}
+            {% set classNames = forms._getClassNamesString(options, 'control', false) %}
+            {% set hidden = options.hidden ? ' style="display: none"' : '' %}
+
+            <textarea class="{{ classNames }}" {{ attributes }} {{ hidden }}>
+                {{ control.value|default('') }}
+            </textarea>
+
+        {% else %}
+            {# String #}
+            {{ options }}
+        {% endif %}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderOption(options) %}{% spaceless %}
+    {# Render option only #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% if options is iterable %}
+            {# Object #}
+
+            {% set classNames = forms._getClassNamesString(options, 'option', false) %}
+            {% set qttributes = forms._tryRenderAttributes(options.attributes|merge({
+                'selected' : options.selected|default(null),
+                'value' : options.value
+            })) %}
+            {% set hidden = option.hidden ? ' style="display: none"' : '' %}
+
+            <option class="{{ classNames }}" {{ qttributes }} {{ hidden }}>{{ options.text }}</option>
+
+        {% else %}
+            {# String #}
+            {{ options }}
+        {% endif %}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderOptgroup(options) %}{% spaceless %}
+    {# Render optgroup with options #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% if options is iterable %}
+            {# Object #}
+
+            {% set classNames = forms._getClassNamesString(options, 'optgroup', false) %}
+            {% set labelAttribute = options.text ? ' label="' ~ options.text ~ '" ' : '' %}
+            {% set attributes = forms._tryRenderAttributes(options.attributes) ~ labelAttribute%}
+            {% set hidden = options.hidden ? ' style="display: none"' : '' %}
+
+            <optgroup  class="{{ classNames }}" {{ attributes }} {{ hidden }}>
+                {% for option in options.value %}
+                    {{ forms._tryRenderOption(option) }}
+                {% endfor %}
+            </optgroup>
+
+        {% else %}
+            {# String #}
+            {{ options }}
+        {% endif %}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderSelect(options) %}{% spaceless %}
+    {# Render select with options and optgroups #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% set idAttribute = options.id ? ' id="' ~ options.id ~ '" ' : '' %}
+        {% set attributes = forms._tryRenderAttributes(options.attributes) ~ idAttribute %}
+        {% set classNames = forms._getClassNamesString(options, 'control', false) %}
+        {% set hidden = options.hidden ? ' style="display: none"' : '' %}
+
+        {% if options is iterable %}
+            {# Object #}
+
+            <select class="{{ classNames }}" {{ attributes }} {{ hidden }}>
+                {% if options is iterable %}
+                    {# Array #}
+                    {% for option in control.options %}
+                        {% if option.group %}
+                            {{ forms._tryRenderOptgroup(option.group) }}
+                        {% elseif option is iterable %}
+                            {{ forms._tryRenderOption(option) }}
+                        {% else %}
+                            {# String #}
+                            {{ option }}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    {# String #}
+                    {{ control.options }}
+                {% endif %}
+            </select>
+
+        {% else %}
+            {# String #}
+            {{ options }}
+        {% endif %}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderButton(options) %}{% spaceless %}
+    {# Render button only, can be with after/before content #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% if options is iterable %}
+            {# Object #}
+
+            {% set idAttribute = options.id ? ' id="' ~ options.id ~ '" ' : '' %}
+            {% set attributes = forms._tryRenderAttributes(options.attributes) ~ idAttribute %}
+            {% set classNames = forms._getClassNamesString(options, 'control', false) %}
+            {% set hidden = options.hidden ? ' style="display: none"' : '' %}
+
+            {% if not options.nosubmit %}
+                {% set attributes = attributes ~ ' type="submit" ' %}
+            {% endif %}
+
+            <button class="{{ classNames }}" {{ attributes }} {{ hidden }}>
+                {{ forms._tryRenderBeforeContent(options.before) }}
+                {{ control.value|default('') }}
+                {{ forms._tryRenderAfterContent(options.after) }}
+            </button>
+
+        {% else %}
+            {# String #}
+            {{ options }}
+        {% endif %}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro _tryRenderInput(options) %}{% spaceless %}
+    {# Render input only #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% if options is iterable %}
+            {# Object #}
+
+            {% set idAttribute = options.id ? ' id="' ~ options.id ~ '" ' : '' %}
+            {% set typeAttribute = options.type ? ' type="' ~ options.type ~ '" ' : '' %}
+            {% set valueAttribute = options.value ? ' value="' ~ options.value ~ '" ' : '' %}
+            {% set attributes = forms._tryRenderAttributes(options.attributes) ~ idAttribute %}
+            {% set classNames = forms._getClassNamesString(options, 'control', false) %}
+            {% set hidden = options.hidden ? ' style="display: none"' : '' %}
+
+            <input class="{{ classNames }}" {{ attributes }}  {{ hidden }}/>
+
+        {% else %}
+            {# String #}
+            {{ options }}
+        {% endif %}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{#####################################################
+             PUBLIC (can use anyone of its)
+######################################################}
+
+{% macro createLabel(options, controls) %}
+    {#
+        Render label
+        label : Object {text : String, reference : String, pseudo : Boolean, ...<common options>}
+        label : String
+        NB: If label object has not reference for control, createRow function add to label first control id value
+    #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% set text = options.text|default('Label is empty') %}
+        {% set referenceAttribute = options.reference ? ' for"' ~ options.reference ~ '" ' : '' %}
+        {% set idAttribute = options.id  ? ' id="' ~ options.id  ~ '" ' : '' %}
+        {% set attributes = forms._tryRenderAttributes(options.attributes) ~ idAttribute ~ referenceAttribute %}
+        {% set classNames = forms._getClassNamesString(options, 'label', false) %}
+        {% set hidden = options.hidden ? ' style="display: none"' : '' %}
+
+        {{ forms._tryRenderWrapperBegin(options.wrapper, 'label') }}
+        {{ forms._tryRenderContainerBegin(options, 'label') }}
+
+        {% if options is not iterable %}
+            {{ options }}
+        {% elseif options.pseudo %}
+            <span class="{{ classNames }}" {{ attributes }} {{ hidden }}>{{ text }}</span>
+        {% else %}
+            <label class="{{ classNames }}" {{ attributes }} {{ hidden }}>{{ text }}</label>
+        {% endif %}
+
+        {{ forms._tryRenderContainerEnd(options, 'label') }}
+        {{ forms._tryRenderWrapperEnd(options.wrapper, 'label') }}
+
+    {% endif %}
+
+{% endmacro %}
+
+{% macro createControl(control) %}
+    {#
+        control: Object (simple)
+                {type : String, name : String, value : String, ...<common options>}
+        control: String
+
+        NB: if control has type "hidden" rendering just control input type="hidden" without wrappers and containers, but with name, id, classNames and attributes
+    #}
+
+    {% import _self as forms %}
+
+    {% set control = control|default({
+        'type' : 'text'
+    }) %}
+
+    {% if not control.norender %}
+
+        {% set controlType = control.type|default('text') %}
+
+        {% if controlType != 'hidden' %}
+            {{ forms._tryRenderWrapperBegin(control.wrapper, 'control') }}
+            {{ forms._tryRenderContainerBegin(control, 'control') }}
+        {% endif %}
+
+        {% if control is iterable %}
+
+            {% if controlType == 'textarea' %}
+                {{ forms._tryRenderTextarea(control) }}
+            {% elseif controlType == 'select' %}
+                {{ forms._tryRenderSelect(control) }}
+            {% elseif controlType == 'button' %}
+                {{ forms._tryRenderButton(control) }}
+            {% else %}
+                {{ forms._tryRenderInput(control) }}
+            {% endif %}
+
+        {% elseif  %}
+
+            {# String #}
+            {{ control }}
+
+        {% endif %}
+
+        {% if controlType != 'hidden' %}
+            {{ forms._tryRenderContainerEnd(control, 'control') }}
+            {{ forms._tryRenderWrapperEnd(control.wrapper, 'control') }}
+        {% endif %}
+
+    {% endif %}
+
+{% endmacro %}
+
+{% macro createControls(options) %}{% spaceless %}
+    {#
+        options : [control, control, ..., control] Array of control Objects
+        options : control Object
+        options : String
+    #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% set optionsIsArray = options is iterable and options[0] %}
+        {% set optionsIsObject = not optionsIsArray and options is iterable %}
+
+        {{ forms._tryRenderWrapperBegin(options.wrapper, 'controls') }}
+        {{ forms._tryRenderContainerBegin(options, 'controls') }}
+
+        {% if optionsIsArray %}
+            {% for controlObject in options %}
+                {{ forms.createControl(controlObject) }}
+            {% endfor %}
+        {% elseif optionsIsObject  %}
+            {{ forms.createControl(options) }}
+        {% else %}
+            {{ options }}
+        {% endif %}
+
+        {{ forms._tryRenderContainerEnd(options, 'controls') }}
+        {{ forms._tryRenderWrapperEnd(options.wrapper, 'controls') }}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro createMessage(options) %}
+    {#
+        Render message only
+        options : message Object
+        options : String
+    #}
+    {% import _self as forms %}
+
+    {% set options = options|default({
+        'type' : 'error',
+        'text' : 'Error'
+    }) %}
+
+    {% if not options.norender %}
+
+        {% set optionsIsArray = options is iterable and options[0] %}
+        {% set optionsIsObject = not optionsIsArray and options is iterable %}
+
+        {% set idAttribute = options.id  ? ' id="' ~ options.id  ~ '" ' : '' %}
+        {% set attributes = forms._tryRenderAttributes(options.attributes) ~ idAttribute %}
+        {% set classNames = forms._getClassNamesString(options, 'message', false) %}
+        {% set hidden = options.hidden ? ' style="display: none"' : '' %}
+
+        {{ forms._tryRenderWrapperBegin(options.wrapper, 'message') }}
+        {{ forms._tryRenderContainerBegin(options, 'message') }}
+
+        {% if options is iterable %}
+            {# Object #}
+            <div class="{{ classNames }}" {{ attributes }} {{ hidden }}>
+                {{ options.text }}
+            </div>
+        {% else %}
+            {# String #}
+            {{ options }}
+        {% endif %}
+
+        {{ forms._tryRenderContainerEnd(options, 'message') }}
+        {{ forms._tryRenderWrapperEnd(options.wrapper, 'message') }}
+
+    {% endif %}
+
+{% endmacro %}
+
+{% macro createMessages(options) %}
+    {#
+        options : [message, message, ..., message] Array of message Objects
+        options : message Object
+        options : String
+    #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% set optionsIsArray = options is iterable and options[0] %}
+        {% set optionsIsObject = not optionsIsArray and options is iterable %}
+
+        {{ forms._tryRenderWrapperBegin(options.wrapper, 'messages') }}
+        {{ forms._tryRenderContainerBegin(options, 'messages') }}
+
+        {% if optionsIsArray %}
+            {% for messageObject in options %}
+                {{ forms.createMessage(messageObject) }}
+            {% endfor %}
+        {% elseif optionsIsObject  %}
+            {{ forms.createMessage(options) }}
+        {% else %}
+            {# String #}
+            {{ options }}
+        {% endif %}
+
+        {{ forms._tryRenderContainerEnd(options, 'messages') }}
+        {{ forms._tryRenderWrapperEnd(options.wrapper, 'messages') }}
+
+    {% endif %}
+
+{% endmacro %}
+
+{% macro createRow(options, openMultipleWrapper, closeMultipleWrapper) %}{% spaceless %}
+    {#
+        Render form row
+        Row is the only essence which can be wrap by multiple-row wrapper.
+    #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% set idAttribute = options.id  ? ' id="' ~ options.id  ~ '" ' : '' %}
+        {% set attributes = forms._tryRenderAttributes(options.attributes) ~ idAttribute %}
+        {% set classNames = forms._getClassNamesString(options, 'row', false) %}
+        {% set hidden = options.hidden ? ' style="display: none" ' : '' %}
+
+        {% if options.controls is iterable and options.controls.type == 'hidden' or options.controls[0].type == 'hidden' %}
+            {# Row with hidden only control #}
+            {{ forms._tryRenderInput(options.controls) }}
+
+        {% else %}
+
+            {% if openMultipleWrapper or openMultipleWrapper is not defined %}
+                {{ forms._tryRenderWrapperBegin(options.wrapper, 'row') }}
+            {% end %}
+            {{ forms._tryRenderContainerBegin(options, 'row') }}
+
+            {% if options is iterable  %}
+                {# Object #}
+
+                {% if options.label is not empty %}
+                    {% if options.controls is iterable and options.label is iterable and not options.label.reference %}
+                        {% if options.controls[0] %}
+                            {# Array, get id first of array element #}
+                            {{ forms.createLabel(options.label|merge({ 'reference' : options.controls[0].id })) }}
+                        {% else %}
+                            {# Object #}
+                            {{ forms.createLabel(options.label|merge({ 'reference' : options.controls.id })) }}
+                        {% endif %}
+                    {% else %}
+                        {# Can't or don't need to get id of the control #}
+                        {{ forms.createLabel(options.label) }}
+                    {% endif %}
+                {% endif %}
+
+                {{ forms.createControls(options.controls) }}
+
+                {% if options.messages is not empty %}
+                    {{ forms.createMessages(options.messages) }}
+                {% endif %}
+
+            {% else %}
+                {# String #}
+                {{ options }}
+            {% endif %}
+
+            {{ forms._tryRenderContainerEnd(options, 'row') }}
+            {% if closeMultipleWrapper or closeMultipleWrapper is not defined %}
+                {{ forms._tryRenderWrapperEnd(options.wrapper, 'row') }}
+            {% endif %}
+
+        {% endif %}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro createRows(options) %}{% spaceless %}
+    {#
+        Render form rows
+    #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% set optionsIsArray = options is iterable and options[0] %}
+        {% set optionsIsObject = not optionsIsArray and options is iterable %}
+
+        {{ forms._tryRenderWrapperBegin(options.wrapper, 'row') }}
+        {{ forms._tryRenderContainerBegin(options, 'row') }}
+
+        {% if optionsIsArray %}
+            {% for controlObject in options %}
+                {{ forms.createRow(controlObject) }}
+            {% endfor %}
+        {% elseif optionsIsObject  %}
+            {{ forms.createRow(options) }}
+        {% else %}
+            {{ options }}
+        {% endif %}
+
+        {{ forms._tryRenderContainerEnd(options, 'row') }}
+        {{ forms._tryRenderWrapperEnd(options.wrapper, 'row') }}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
+
+{% macro create(options) %}{% spaceless %}
+    {#
+        Render form
+    #}
+
+    {% import _self as forms %}
+
+    {% set options = options|default({}) %}
+
+    {% if not options.norender %}
+
+        {% set idAttribute = options.id  ? ' id="' ~ options.id  ~ '" ' : '' %}
+        {% set methodAttribute = ' method="' ~ options.method|default('post')  ~ '" ' %}
+        {% set actionAttribute = ' action="' ~ options.action  ~ '" ' %}
+        {% set attributes = forms._tryRenderAttributes(options.attributes) ~ methodAttribute ~ actionAttribute ~ idAttribute %}
+        {% set classNames = forms._getClassNamesString(options, 'form', false) %}
+        {% set hidden = options.hidden ? ' style="display: none" ' : '' %}
+
+        {{ forms._tryRenderWrapperBegin(options.wrapper, 'form') }}
+        {{ forms._tryRenderContainerBegin(options, 'form') }}
+
+        {% if options.rows is iterable  %}
+            {# Array #}
+
+            {% set nextRow = '' %}
+            {% set hasMultipleWrapper = 0 %}
+            {% set openMultipleWrapper = 0 %}
+
+            {% for row in options.rows %}
+                {% set nextRow = loop.last ? options.rows[loop.index] : 0 %}
+                {% if row is iterable %}
+                    {# Object #}
+                    {% if not row.norender %}
+                        {# if row must be not render - miss it #}
+                        {% if not hasMultipleWrapper %}
+                            {% set openMultipleWrapper = row.wrapper and row.wrapper.multiple %}
+                            {% set hasMultipleWrapper = openMultipleWrapper %}
+                        {% endif %}
+
+                        {#
+                            close wrapper if it starts and:
+                            - last loop index
+                            - has row.wrapper.multiple and row.wrapper.closeMultiple flags
+                            - row names are different (if no wrapper flags, wrapper depends from row "name")
+                        #}
+                        {% set closeMultipleWrapper = hasMultipleWrapper and (
+                            loop.last
+                            or
+                            (row.wrapper.multiple and row.wrapper.closeMultiple)
+                            or
+                            (nextRow.name and row.name and nextRow.name != row.name or not row.name)
+                        ) %}
+
+                        {{ forms.createRow(row, openMultipleWrapper, closeMultipleWrapper) }}
+
+                    {% endif %}
+                {% else %}
+                    {# Если это строка #}
+                    {% set closeMultipleWrapper = hasMultipleWrapper ? 1 : 0 %}
+                    {{ forms.createRow(row, false, closeMultipleWrapper) }}
+                {% endif %}
+
+                {# reset and check vars for each loop #}
+                {% set openMultipleWrapper = 0 %}
+                {% set hasMultipleWrapper = closeMultipleWrapper ? 0 : hasMultipleWrapper %}
+
+            {% endfor %}
+
+        {% else %}
+            {# String #}
+            {{ options.rows }}
+        {% endif %}
+
+        {{ forms._tryRenderContainerEnd(options, 'form') }}
+        {{ forms._tryRenderWrapperEnd(options.wrapper, 'form') }}
+
+    {% endif %}
+
+{% endspaceless %}{% endmacro %}
