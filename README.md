@@ -3,9 +3,8 @@ FormBuilder (pre-alpha)
 
 Build html forms from JSON for Javascript, Node.js, PHP(Smarty,Twig), Ruby
 
-===========
-
 Main terms:
+===========
 - Form builds from rows.
 - Row has a label(single), controls(multiple) and messages(multiple). Row essences(label, controls, messages) render is the same order.
 - Label is HTML container with label or span with text content
